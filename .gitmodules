@@ -1,0 +1,9 @@
+[submodule "vine2"]
+	path = vine2
+	url = https://github.com/skumyol/vine2.git
+[submodule "vine-studio"]
+	path = vine-studio
+	url = https://github.com/skumyol/vine_studio.git
+[submodule "vine-rec"]
+	path = vine-rec
+	url = https://github.com/skumyol/vine_rec.git
