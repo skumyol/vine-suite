@@ -1,0 +1,61 @@
+version: "3.8"
+
+# Meta-repo orchestration for vine projects
+# Each service references the docker-compose from individual projects
+
+services:
+  # vine2 - AI wine analysis (Python backend + Vite frontend)
+  vine2-backend:
+    extends:
+      file: ./vine2/docker-compose.yml
+      service: backend
+    ports:
+      - "8000:8000"
+
+  vine2-frontend:
+    extends:
+      file: ./vine2/docker-compose.yml
+      service: frontend
+    ports:
+      - "5173:5173"
+
+  # vine-studio - OCR processing studio (Express + React)
+  vine-studio:
+    build: ./vine-studio
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./vine-studio/data:/app/data
+
+  # vine-rec - Wine recommendations (Python backend + Next.js frontend)
+  vine-rec-backend:
+    extends:
+      file: ./vine-rec/docker-compose.yml
+      service: backend
+    ports:
+      - "8001:8001"
+
+  vine-rec-frontend:
+    extends:
+      file: ./vine-rec/docker-compose.yml
+      service: frontend
+    ports:
+      - "3001:3001"
+
+  # Nginx reverse proxy (optional) - unifies all services under one port
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - vine2-backend
+      - vine2-frontend
+      - vine-studio
+      - vine-rec-backend
+      - vine-rec-frontend
+    profiles:
+      - proxy
