@@ -1,0 +1,29 @@
+# Ignore symlinked project folders (use submodules instead)
+# When using symlinks locally, uncomment below:
+# vine2
+# vine-studio
+# vine-rec
+
+# Dependencies
+node_modules/
+.venv/
+__pycache__/
+
+# Build outputs
+dist/
+build/
+.next/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

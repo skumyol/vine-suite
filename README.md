@@ -84,3 +84,85 @@ git submodule add https://github.com/user/vine2.git vine2
 git submodule add https://github.com/user/vine_studio.git vine-studio
 git submodule add https://github.com/user/vine_rec.git vine-rec
 ```
+
+## GitHub Setup
+
+### Step 1: Push Individual Repos
+
+Push each project to its own GitHub repo:
+
+```bash
+# vine2
+cd /Users/skumyol/Documents/GitHub/vine2
+git remote add origin https://github.com/YOUR_USERNAME/vine2.git
+git push -u origin main
+
+# vine_studio
+cd /Users/skumyol/Documents/GitHub/vine_studio
+git remote add origin https://github.com/YOUR_USERNAME/vine_studio.git
+git push -u origin main
+
+# vine_rec
+cd /Users/skumyol/Documents/GitHub/vine_rec
+git remote add origin https://github.com/YOUR_USERNAME/vine_rec.git
+git push -u origin main
+```
+
+### Step 2: Convert to Submodules
+
+Run the setup script:
+
+```bash
+cd /Users/skumyol/Documents/GitHub/vine-suite
+./github-setup.sh
+```
+
+Or manually:
+
+```bash
+cd /Users/skumyol/Documents/GitHub/vine-suite
+rm -f vine2 vine-studio vine-rec
+git submodule add https://github.com/YOUR_USERNAME/vine2.git vine2
+git submodule add https://github.com/YOUR_USERNAME/vine_studio.git vine-studio
+git submodule add https://github.com/YOUR_USERNAME/vine_rec.git vine-rec
+git add .gitmodules
+git commit -m "Add submodules"
+```
+
+### Step 3: Push Meta-Repo
+
+```bash
+git remote add origin https://github.com/YOUR_USERNAME/vine-suite.git
+git push -u origin main
+```
+
+### Cloning from GitHub
+
+```bash
+# Clone with all submodules
+git clone --recurse-submodules https://github.com/YOUR_USERNAME/vine-suite.git
+
+# Or clone then init submodules
+git clone https://github.com/YOUR_USERNAME/vine-suite.git
+cd vine-suite
+git submodule update --init --recursive
+```
+
+### Updating Submodules
+
+When a submodule project is updated:
+
+```bash
+cd vine-suite
+
+# Pull latest in all submodules
+git submodule update --remote
+
+# Or update specific submodule
+git submodule update --remote vine2
+
+# Commit the new submodule refs
+git add vine2 vine-studio vine-rec
+git commit -m "Update submodules"
+git push
+```
