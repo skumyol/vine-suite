@@ -2,6 +2,15 @@
 
 Meta-repository orchestrating three wine photo verification systems, each exploring different architectural approaches to the same problem: **accurately match wine bottle photos to SKU specifications using AI/ML pipelines**.
 
+## 🌐 Production URLs
+
+| App | URL |
+|-----|-----|
+| Main Site | https://skumyol.com |
+| vine-rec | https://skumyol.com/vine/ |
+| vine-studio | https://skumyol.com/wine/ |
+| vine2 | https://skumyol.com/vine2/ |
+
 All three projects target the VinoBuzz internship assignment: achieving **≥90% accuracy** on 10 challenging test SKUs (Burgundy Grand/1er Cru, Bordeaux, Champagne, Northern Rhône, Piedmont, Alsace, Sonoma).
 
 ---
@@ -243,12 +252,30 @@ git push origin main
 
 ## Project URLs and Repositories
 
+### Development (Local)
+
 | Project | Local URL | GitHub Repository |
 |---------|-----------|-------------------|
 | vine2 | http://localhost:5173 | https://github.com/skumyol/vine2 |
 | vine-studio | http://localhost:3000 | https://github.com/skumyol/vine_studio |
 | vine-rec | http://localhost:3001 | https://github.com/skumyol/vine_rec |
 | **vine-suite** (meta) | http://localhost (via nginx) | https://github.com/skumyol/vine-suite |
+
+### Production (Server)
+
+Each app is deployed separately on the server and accessible via nginx reverse proxy:
+
+| Project | Production URL | Backend API |
+|---------|----------------|-------------|
+| Main Site | https://skumyol.com | https://skumyol.com/api/ |
+| vine-rec | https://skumyol.com/vine/ | https://skumyol.com/vine/api/ |
+| vine-studio | https://skumyol.com/wine/ | (Express integrated) |
+| vine2 | https://skumyol.com/vine2/ | https://skumyol.com/vine2/api/ |
+
+**Backend Ports (internal):**
+- Main site backend: `8000`
+- vine-rec backend: `8002`
+- vine2 backend: `8003`
 
 ---
 
