@@ -1,152 +1,231 @@
 # Vine API
 
-Unified wine image analysis service — merging vine2 and vine-rec backends into a single FastAPI application.
+Wine image analysis and verification platform. Search, OCR, and VLM-powered pipeline for finding and verifying wine bottle images from web sources.
+
+**Tech stack:** FastAPI + Next.js 14 + TailwindCSS + Docker
+
+---
+
+## Overview
+
+Vine API analyzes wine SKU identities and finds the best matching images from the web. It combines:
+
+- **Search** — Google/Bing image search via OpenSerp
+- **OCR** — Text extraction (EasyOCR, Tesseract, PaddleOCR)
+- **VLM** — Visual verification (Gemini, Mistral, Qwen, PaddleVLM)
+- **Scoring** — Multi-signal ranking pipeline
+
+Deploys as Docker containers behind nginx.
+
+---
 
 ## Architecture
 
 ```
-app/
-├── api/                    # FastAPI route handlers
-│   ├── health.py          # Health and readiness endpoints
-│   └── analyze.py         # Analyze and batch endpoints (Phase 3)
-├── core/                   # Core utilities and configuration
-│   ├── constants.py       # Enums and constants (Verdict, AnalyzerMode, etc.)
-│   ├── registry.py        # Provider registry with DI
-│   └── settings.py        # Configuration management
-├── models/                 # Pydantic models
-│   └── wine.py            # Request/response schemas
-└── services/               # Service providers
-    ├── base.py            # ABC interfaces for OCR/VLM/Search
-    ├── ocr/               # OCR implementations (stubbed)
-    ├── vlm/               # VLM implementations (stubbed)
-    └── search/            # Search implementations (stubbed)
-
-tests/
-├── contract/              # Contract tests for golden fixtures
-│   ├── test_fixtures.py   # Fixture compatibility tests
-│   └── test_api.py        # API contract tests
-└── fixtures/golden/       # Golden fixtures from legacy backends
-    ├── vine2/             # vine2 response fixtures
-    ├── vine-rec/          # vine-rec response fixtures
-    └── shared/            # Unified request fixtures
+┌─────────────┐     ┌─────────────┐     ┌─────────────────┐
+│   Nginx     │────▶│  Frontend   │────▶│   Next.js 14    │
+│  (443/80)   │     │   :3001     │     │   /vine         │
+└──────┬──────┘     └─────────────┘     └─────────────────┘
+       │
+       │ /vine/api/    ┌─────────────┐
+       └──────────────▶│    API      │────▶│  OpenSerp    │
+                       │   :8002     │     │   :7000      │
+                       │   FastAPI   │     │  (search)    │
+                       └──────┬──────┘     └─────────────────┘
+                              │
+                              │ OCR request   ┌─────────────┐
+                              └──────────────▶│ OCR Service  │
+                                              │   :8003      │
+                                              │EasyOCR/Tess/ │
+                                              │   Paddle     │
+                                              └─────────────┘
 ```
 
-## Phased Implementation
+---
 
-### Phase 1: Foundation ✅ COMPLETE
-- Golden fixtures extracted from vine2 and vine-rec
-- ABC interfaces defined for OCR, VLM, Search providers
-- Provider stubs (NotImplementedError)
-- Service registry with DI
-- Minimal FastAPI skeleton with health endpoints
-- 37 contract tests passing
+## Project Structure
 
-### Phase 2: Core Providers (Next)
-- Implement EasyOCR provider
-- Implement Gemini VLM provider
-- Implement Playwright search provider
-- Wire up providers to analysis pipeline
-- Single `/analyze` endpoint working
+```
+├── app/                        # FastAPI backend
+│   ├── api/                    # Route handlers (health, analyze, eval)
+│   ├── core/                   # Registry, settings, constants
+│   ├── models/                 # Pydantic schemas
+│   └── services/               # Provider implementations
+│       ├── ocr/                # EasyOCR, Tesseract, PaddleOCR
+│       ├── vlm/                # Gemini, Mistral, Qwen, PaddleVLM
+│       ├── search/             # OpenSerp, Playwright, SerpAPI
+│       ├── image/              # Downloader, OpenCV, cropper
+│       ├── pipeline/           # Standard, Voter, Paddle+Qwen
+│       ├── parser.py           # Wine SKU parser
+│       └── scoring.py          # Candidate scoring
+│
+├── frontend/                   # Next.js 14 app
+│   ├── app/                    # App router pages
+│   ├── components/             # UI components (Shell, PageHeader)
+│   └── lib/                    # API client, types, utilities
+│
+├── ocr-service/                # Standalone OCR microservice
+│   ├── Dockerfile              # Multi-engine OCR container
+│   └── main.py                 # FastAPI OCR endpoints
+│
+├── docker-compose.yml          # Local development
+├── docker-compose.full.yml     # Production deployment
+└── DEPLOY.md                   # Deployment guide
+```
 
-### Phase 3: Pipeline & API
-- BasePipeline with StandardPipeline implementation
-- Mode translation layer for backward compatibility
-- Batch endpoint
-- Error taxonomy (custom exceptions)
-
-### Phase 4: Production Polish
-- All 9 providers implemented
-- SQLite persistence
-- Concurrency controls (semaphores)
-- Security hardening (SSRF protection)
-- Observability (metrics)
-
-### Phase 5: Migration
-- Dual-run comparison with legacy backends
-- Directory flattening
-- Deprecate vine2 and vine-rec
+---
 
 ## Quick Start
 
-```bash
-# Development server with auto-reload
-./run_dev.sh
+### Local Development
 
-# Production server
-./run_prod.sh
+```bash
+# Backend
+./run_dev.sh                    # FastAPI on :8000
+
+# Frontend (separate terminal)
+cd frontend && pnpm install && pnpm dev    # Next.js on :3000
 
 # Run tests
-source .venv/bin/activate
-python -m pytest tests/contract/ -v
+python -m pytest tests/ -v
 ```
+
+### Docker (Full Stack)
+
+```bash
+# Local development with all services
+docker-compose up -d
+
+# Production deployment
+docker-compose -f docker-compose.full.yml up -d --build
+```
+
+---
 
 ## API Endpoints
 
-| Method | Endpoint | Status | Description |
-|--------|----------|--------|-------------|
-| GET | `/health` | ✅ Ready | Basic health check |
-| GET | `/health/ready` | ✅ Ready | Readiness probe |
-| GET | `/health/providers` | ✅ Ready | Provider availability |
-| POST | `/api/v1/analyze` | 🚧 Phase 2 | Single wine analysis |
-| POST | `/api/v1/batch` | 🚧 Phase 2 | Batch analysis |
-| GET | `/api/v1/modes` | ✅ Ready | List analyzer modes |
+### Analysis
 
-## Provider Registry
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/analyze` | Single SKU analysis |
+| POST | `/api/v1/batch` | Batch analysis (3 concurrent) |
+| GET | `/api/v1/modes` | List analyzer modes |
 
-The `ProviderRegistry` provides lazy initialization and configuration-based provider selection:
+### Evaluation
 
-```python
-from app.core.registry import get_registry
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/eval/pipelines` | Full pipeline evaluation |
+| GET | `/api/v1/eval/pipelines/quick` | Quick pipeline check |
+| GET | `/api/v1/eval/ocr` | OCR provider check |
 
-registry = get_registry()
-ocr = registry.get_ocr()      # Returns configured OCR provider
-vlm = registry.get_vlm()      # Returns configured VLM provider
-search = registry.get_search()  # Returns configured search provider
-```
+### Health
 
-Currently all providers return `is_available() == False` (Phase 1 stubs).
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | API health |
+| GET | `/health/ready` | Readiness probe |
+| GET | `/health/providers` | Provider status |
 
-## Environment Variables
+---
+
+## Analyzer Modes
+
+| Mode | Pipeline | Use Case |
+|------|----------|----------|
+| `hybrid_fast` | Standard | Fast balanced analysis (default) |
+| `hybrid_strict` | Standard | Strict with higher thresholds |
+| `strict` | Voter | High precision, rejects borderline |
+| `balanced` | Voter | Precision/recall balance |
+| `voter` | Voter | Multi-module consensus voting |
+| `paddle_qwen` | Paddle+Qwen | Chinese/wine-specialized |
+
+---
+
+## Providers
+
+### OCR
+
+| Provider | Library | Languages | Notes |
+|----------|---------|-----------|-------|
+| EasyOCR | easyocr | Multi | Default, GPU-accelerated |
+| Tesseract | pytesseract | 100+ | Fast, lightweight |
+| PaddleOCR | paddleocr | en/ch/ko/ja | Best for Asian languages |
+
+### VLM (Vision Language Models)
+
+| Provider | Model | API |
+|----------|-------|-----|
+| Gemini | gemini-pro-vision | Google AI |
+| Mistral | pixtral-12b | Direct / OpenRouter |
+| Qwen | qwen2.5-vl | OpenRouter |
+| PaddleVLM | paddleocr-vlm | Local |
+
+### Search
+
+| Provider | Engine | Type |
+|----------|--------|------|
+| OpenSerp | Google/Bing | Default microservice |
+| Playwright | Browser | Direct scraping |
+| SerpAPI | Google | API service |
+
+---
+
+## Configuration
+
+Create `.env` from `.env.example`:
 
 ```bash
-# Provider selection (Phase 2+)
-VINE_API_OCR_PROVIDER=easyocr
-VINE_API_VLM_PROVIDER=gemini
-VINE_API_SEARCH_PROVIDER=playwright
+# Required
+OPENROUTER_API_KEY=your_key_here        # For Qwen, Mistral VLM
 
-# API keys (Phase 2-4)
-VINE_API_GEMINI_API_KEY=...
-VINE_API_SERPAPI_API_KEY=...
-VINE_API_GOOGLE_API_KEY=...
+# Optional
+NVIDIA_API_KEY=your_key_here            # Alternative VLM
+GOOGLE_API_KEY=your_key_here            # Gemini, Custom Search
+SERPAPI_KEY=your_key_here               # SerpAPI search
 
-# Server
-VINE_API_PORT=8000
-VINE_API_DEBUG=false
+# Provider selection
+OCR_PROVIDER=easyocr                    # easyocr | tesseract | paddleocr
+VLM_PROVIDER=gemini                       # gemini | mistral | qwen | paddlevlm
+SEARCH_PROVIDER=openserp                # openserp | playwright | serpapi | google
 ```
 
-## Legacy Mode Mapping
+---
 
-| Legacy Mode | Unified Mode | Backend |
-|-------------|--------------|---------|
-| `strict` | `strict` | vine2 |
-| `balanced` | `balanced` | vine2 |
-| `hybrid_fast` | `hybrid_fast` | vine-rec |
-| `hybrid_strict` | `hybrid_strict` | vine-rec |
-| `voter` | `voter` | vine-rec |
-| `paddle_qwen` | `paddle_qwen` | vine-rec |
-| `vine2` | `hybrid_fast` | legacy alias |
+## Frontend
 
-## Contract Tests
+Next.js 14 app with TailwindCSS, deployed at `/vine` via nginx.
 
-Contract tests verify that our models and API can handle requests/responses from both legacy backends:
+| Page | Route | Description |
+|------|-------|-------------|
+| Dashboard | `/vine` | API status, quick links |
+| Analyze | `/vine/analyze` | Single SKU analysis |
+| Batch | `/vine/batch` | Multi-SKU batch job |
+| Evaluate | `/vine/eval` | Pipeline comparison |
+| Health | `/vine/health` | Provider status |
 
-```python
-# tests/contract/test_fixtures.py
-test_vine2_analyze_response_fixture_exists()
-test_vine_rec_verify_response_fixture_exists()
-test_vine2_request_format_compatible()
-test_vine_rec_request_format_compatible()
-test_legacy_mode_mapping()
+---
+
+## Deployment
+
+See [DEPLOY.md](DEPLOY.md) for full production deployment instructions.
+
+Quick deploy:
+
+```bash
+# Server setup
+echo "OPENROUTER_API_KEY=your_key" > .env
+docker-compose -f docker-compose.full.yml up -d --build
+
+# Nginx locations
+location /vine/api/ { proxy_pass http://127.0.0.1:8002/api/; }
+location /vine/health/ { proxy_pass http://127.0.0.1:8002/health/; }
+location /vine { proxy_pass http://127.0.0.1:3001; }
 ```
 
-All 37 tests pass, confirming backward compatibility at the data layer.
+---
+
+## License
+
+MIT
