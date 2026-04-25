@@ -1,9 +1,3 @@
-# Ignore symlinked project folders (use submodules instead)
-# When using symlinks locally, uncomment below:
-# vine2
-# vine-studio
-# vine-rec
-
 # Dependencies
 node_modules/
 .venv/
@@ -27,4 +21,10 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Runtime data
+data/
+image_cache/
+
+# Misc
 .gstack/
