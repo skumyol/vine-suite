@@ -1,0 +1,101 @@
+{
+  "description": "Golden response from vine2 /analyze endpoint",
+  "schema_version": "1.0",
+  "sample_response": {
+    "input": {
+      "wine_name": "Domaine Rossignol-Trapet Latricieres-Chambertin Grand Cru",
+      "vintage": "2017",
+      "format": "750ml",
+      "region": "Burgundy",
+      "analyzer_mode": "strict"
+    },
+    "parsed_identity": {
+      "producer": "Domaine Rossignol-Trapet",
+      "appellation": "Latricieres-Chambertin Grand Cru",
+      "vineyard_or_cuvee": null,
+      "classification": "Grand Cru",
+      "vintage": "2017",
+      "format": "750ml",
+      "region": "Burgundy",
+      "raw_wine_name": "Domaine Rossignol-Trapet Latricieres-Chambertin Grand Cru",
+      "normalized_wine_name": "rossignol trapet latricieres chambertin grand cru"
+    },
+    "verdict": "PASS",
+    "confidence": 0.92,
+    "selected_image_url": "https://example.com/wine-images/rossignol-trapet-2017.jpg",
+    "selected_source_page": "https://wine-searcher.com/find/rossignol+trapet+latricieres+chambertin+2017",
+    "reason": "All core identity fields verified; image quality acceptable",
+    "fail_reason": null,
+    "field_matches": {
+      "producer": {
+        "target": "Domaine Rossignol-Trapet",
+        "extracted": "Domaine Rossignol-Trapet",
+        "status": "match",
+        "confidence": 0.95
+      },
+      "appellation": {
+        "target": "Latricieres-Chambertin Grand Cru",
+        "extracted": "Latricieres-Chambertin",
+        "status": "match",
+        "confidence": 0.88
+      }
+    },
+    "debug": {
+      "queries": [
+        "Domaine Rossignol-Trapet Latricieres-Chambertin Grand Cru 2017",
+        "Rossignol-Trapet Latricieres-Chambertin 2017"
+      ],
+      "candidates_considered": 12,
+      "hard_fail_reasons": [],
+      "ocr_snippets": [
+        "ROSSIGNOL-TRAPET",
+        "LATRICIERES-CHAMBERTIN"
+      ],
+      "score_breakdown": {
+        "producer": 0.95,
+        "appellation": 0.88,
+        "vineyard_or_cuvee": 0.0,
+        "classification": 0.9,
+        "vintage": 0.95,
+        "ocr_clarity": 0.85,
+        "image_quality": 0.82,
+        "source_trust": 0.75
+      },
+      "notes": [
+        "High confidence on producer match",
+        "Minor appellation normalization applied"
+      ],
+      "candidate_summaries": [],
+      "module_votes": [
+        {
+          "module": "ocr_verifier",
+          "available": true,
+          "passed": true,
+          "confidence": 0.92,
+          "weight": 0.4,
+          "reason": "OCR extracted key identity fields",
+          "field_matches": {},
+          "raw_payload": {}
+        }
+      ]
+    }
+  },
+  "expected_fields": [
+    "input",
+    "parsed_identity",
+    "verdict",
+    "confidence",
+    "selected_image_url",
+    "selected_source_page",
+    "reason",
+    "fail_reason",
+    "field_matches",
+    "debug"
+  ],
+  "required_fields": [
+    "input",
+    "parsed_identity",
+    "verdict",
+    "reason"
+  ]
+}

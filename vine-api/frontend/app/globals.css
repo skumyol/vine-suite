@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 0 0% 100%;
+  --bg-subtle: 0 0% 97%;
+  --bg-muted: 0 0% 94%;
+
+  --surface: 0 0% 100%;
+  --surface-elevated: 0 0% 100%;
+
+  --fg: 0 0% 9%;
+  --fg-muted: 0 0% 40%;
+  --fg-subtle: 0 0% 60%;
+
+  --border: 0 0% 90%;
+  --border-strong: 0 0% 80%;
+  --ring: 0 0% 70%;
+
+  --primary: 142 76% 36%;
+  --primary-fg: 0 0% 100%;
+  --primary-soft: 142 76% 95%;
+
+  --success: 142 76% 36%;
+  --success-soft: 142 76% 95%;
+
+  --warning: 38 92% 50%;
+  --warning-soft: 38 92% 95%;
+
+  --danger: 0 84% 60%;
+  --danger-soft: 0 84% 95%;
+
+  --info: 210 100% 50%;
+  --info-soft: 210 100% 95%;
+
+  --sidebar-bg: 0 0% 98%;
+  --sidebar-border: 0 0% 92%;
+  --sidebar-fg: 0 0% 35%;
+  --sidebar-fg-active: 0 0% 9%;
+  --sidebar-hover: 0 0% 95%;
+  --sidebar-active: 0 0% 92%;
+}
+
+.dark {
+  --bg: 0 0% 7%;
+  --bg-subtle: 0 0% 12%;
+  --bg-muted: 0 0% 18%;
+
+  --surface: 0 0% 10%;
+  --surface-elevated: 0 0% 14%;
+
+  --fg: 0 0% 95%;
+  --fg-muted: 0 0% 60%;
+  --fg-subtle: 0 0% 45%;
+
+  --border: 0 0% 20%;
+  --border-strong: 0 0% 30%;
+  --ring: 0 0% 40%;
+
+  --primary: 142 70% 45%;
+  --primary-fg: 0 0% 100%;
+  --primary-soft: 142 70% 15%;
+
+  --success: 142 70% 45%;
+  --success-soft: 142 70% 15%;
+
+  --warning: 38 90% 55%;
+  --warning-soft: 38 90% 15%;
+
+  --danger: 0 80% 65%;
+  --danger-soft: 0 80% 15%;
+
+  --info: 210 90% 60%;
+  --info-soft: 210 90% 15%;
+
+  --sidebar-bg: 0 0% 9%;
+  --sidebar-border: 0 0% 15%;
+  --sidebar-fg: 0 0% 55%;
+  --sidebar-fg-active: 0 0% 95%;
+  --sidebar-hover: 0 0% 15%;
+  --sidebar-active: 0 0% 20%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--bg));
+  color: hsl(var(--fg));
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

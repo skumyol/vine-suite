@@ -1,0 +1,76 @@
+{
+  "description": "Golden response from vine-rec /analyze endpoint",
+  "schema_version": "1.0",
+  "sample_response": {
+    "input": {
+      "wine_name": "Domaine Arlaud Morey-St-Denis Monts Luisants 1er Cru",
+      "vintage": "2019",
+      "format": "750ml",
+      "region": "Burgundy"
+    },
+    "parsed_sku": {
+      "raw_name": "Domaine Arlaud Morey-St-Denis Monts Luisants 1er Cru",
+      "producer": "Domaine Arlaud",
+      "producer_normalized": "domaine arlaud",
+      "appellation": "Morey-St-Denis Monts Luisants 1er Cru",
+      "appellation_normalized": "morey st denis monts luisants 1er cru",
+      "vineyard": "Monts Luisants",
+      "vineyard_normalized": "monts luisants",
+      "classification": "1er Cru",
+      "classification_normalized": "1er cru",
+      "cuvee": null,
+      "cuvee_normalized": null,
+      "vintage": "2019",
+      "format_ml": 750,
+      "region": "Burgundy",
+      "normalized_tokens": [
+        "domaine",
+        "arlaud",
+        "morey",
+        "st",
+        "denis",
+        "monts",
+        "luisants",
+        "1er",
+        "cru"
+      ]
+    },
+    "selected_image_url": "https://example.com/wine-images/arlaud-monts-luisants-2019.jpg",
+    "confidence": 0.89,
+    "verdict": "PASS",
+    "reason": "Image verified against parsed SKU identity",
+    "analyzer_mode": "hybrid_fast",
+    "top_candidates": [
+      {
+        "url": "https://example.com/wine-images/arlaud-monts-luisants-2019.jpg",
+        "source": "wine-searcher",
+        "confidence": 0.89
+      },
+      {
+        "url": "https://example.com/wine-images/arlaud-monts-luisants-alt.jpg",
+        "source": "cellartracker",
+        "confidence": 0.72
+      }
+    ],
+    "processing_time_ms": 2450,
+    "created_at": "2024-01-15T10:30:00Z"
+  },
+  "expected_fields": [
+    "input",
+    "parsed_sku",
+    "selected_image_url",
+    "confidence",
+    "verdict",
+    "reason",
+    "analyzer_mode",
+    "top_candidates",
+    "processing_time_ms",
+    "created_at"
+  ],
+  "required_fields": [
+    "input",
+    "parsed_sku",
+    "verdict",
+    "reason"
+  ]
+}

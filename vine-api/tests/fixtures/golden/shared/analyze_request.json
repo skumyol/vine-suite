@@ -1,0 +1,36 @@
+{
+  "description": "Common request format for unified /analyze endpoint",
+  "schema_version": "1.0",
+  "vine2_compatible": {
+    "wine_name": "Domaine Rossignol-Trapet Latricieres-Chambertin Grand Cru",
+    "vintage": "2017",
+    "format": "750ml",
+    "region": "Burgundy",
+    "analyzer_mode": "strict"
+  },
+  "vine_rec_compatible": {
+    "wine_name": "Domaine Arlaud Morey-St-Denis Monts Luisants 1er Cru",
+    "vintage": "2019",
+    "format": "750ml",
+    "region": "Burgundy",
+    "analyzer_mode": "hybrid_fast"
+  },
+  "unified_format": {
+    "wine_name": "string (required) - Full wine name",
+    "vintage": "string (optional) - Vintage year",
+    "format": "string (optional) - Bottle format, e.g., '750ml'",
+    "region": "string (optional) - Wine region",
+    "analyzer_mode": "string (optional) - 'strict', 'balanced', 'hybrid_fast', 'hybrid_strict', 'voter', 'paddle_qwen'"
+  },
+  "legacy_mode_map": {
+    "strict": "strict",
+    "balanced": "balanced",
+    "hybrid_fast": "hybrid_fast",
+    "hybrid_strict": "hybrid_strict",
+    "voter": "voter",
+    "paddle_qwen": "paddle_qwen",
+    "vine2": "hybrid_fast"
+  },
+  "required_fields": ["wine_name"],
+  "optional_fields": ["vintage", "format", "region", "analyzer_mode"]
+}

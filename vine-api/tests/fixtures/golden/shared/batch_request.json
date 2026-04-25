@@ -1,0 +1,43 @@
+{
+  "description": "Common batch request format for unified /batch endpoint",
+  "schema_version": "1.0",
+  "vine2_format": {
+    "items": [
+      {
+        "wine_name": "Domaine Rossignol-Trapet Latricieres-Chambertin Grand Cru",
+        "vintage": "2017",
+        "format": "750ml",
+        "region": "Burgundy",
+        "analyzer_mode": "strict"
+      }
+    ]
+  },
+  "vine_rec_format": {
+    "wines": [
+      {
+        "wine_name": "Domaine Arlaud Morey-St-Denis Monts Luisants 1er Cru",
+        "vintage": "2019",
+        "format": "750ml",
+        "region": "Burgundy"
+      }
+    ],
+    "analyzer_mode": "hybrid_fast"
+  },
+  "unified_format": {
+    "items": [
+      {
+        "wine_name": "string (required)",
+        "vintage": "string (optional)",
+        "format": "string (optional)",
+        "region": "string (optional)",
+        "analyzer_mode": "string (optional, per-item override)"
+      }
+    ],
+    "global_mode": "string (optional, default for all items)"
+  },
+  "field_mapping": {
+    "vine2.items": "unified.items",
+    "vine_rec.wines": "unified.items",
+    "vine_rec.analyzer_mode": "unified.global_mode"
+  }
+}
