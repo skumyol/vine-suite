@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from app.models.wine import (
     AnalyzeRequest,
+    AnalyzeResponse,
     VLMVerification,
 )
 from app.services.image.downloader import ImageDownloader
@@ -147,7 +148,7 @@ class PaddleQwenPipeline:
             if cand.get("ocr_text"):
                 from rapidfuzz import fuzz
                 identity_text = " ".join([
-                    parsed.wine_name,
+                    parsed.raw_wine_name,
                     parsed.vintage or "",
                     parsed.producer or "",
                 ])

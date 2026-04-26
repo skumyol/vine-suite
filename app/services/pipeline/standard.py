@@ -3,6 +3,7 @@
 import asyncio
 from typing import Dict, List, Optional
 
+from app.models.wine import AnalyzeRequest, AnalyzeResponse
 from app.services.image.downloader import ImageDownloader
 from app.services.image.opencv import OpenCVAnalyzer
 from app.services.image.cropper import LabelCropper

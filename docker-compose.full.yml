@@ -16,6 +16,7 @@ services:
     build:
       context: ./ocr-service
       dockerfile: Dockerfile
+      network: host
     image: vine-suite/ocr-service:local
     ports:
       - "127.0.0.1:8003:8000"
@@ -63,6 +64,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      network: host
     ports:
       - "8002:8000"
     environment:
@@ -96,6 +98,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      network: host
     ports:
       - "3001:3000"
     environment:
@@ -107,7 +110,7 @@ services:
     networks:
       - vine-api-net
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/vine"]
       interval: 30s
       timeout: 10s
       retries: 3

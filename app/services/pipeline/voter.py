@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 
 from app.models.wine import (
     AnalyzeRequest,
+    AnalyzeResponse,
     VLMVerification,
 )
 from app.services.image.downloader import ImageDownloader
@@ -114,7 +115,7 @@ class VoterPipeline:
                     # OCR provides hints, not verdicts
                     text = ocr_result.text.lower()
                     identity_text = " ".join([
-                        parsed.wine_name.lower(),
+                        parsed.raw_wine_name.lower(),
                         (parsed.vintage or "").lower(),
                         (parsed.producer or "").lower(),
                     ])

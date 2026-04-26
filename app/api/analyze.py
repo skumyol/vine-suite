@@ -121,7 +121,7 @@ async def analyze_sku(
         return AnalyzeResponse(
             input=payload,
             parsed_identity=ParsedIdentity(
-                raw_wine_name=parsed.wine_name,
+                raw_wine_name=parsed.raw_wine_name,
                 normalized_wine_name=parsed.normalized_wine_name,
                 producer=parsed.producer,
                 appellation=parsed.appellation,
