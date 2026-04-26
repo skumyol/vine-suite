@@ -17,7 +17,12 @@ ENV PYTHONUNBUFFERED=1 \
     MAX_CONCURRENT_REQUESTS=3
 
 # Install system dependencies for OCR (layered for caching)
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Using --network=host equivalent for build by adding DNS servers directly
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && update-ca-certificates && \
+    apt-get install -y --no-install-recommends \
     tesseract-ocr \
     tesseract-ocr-eng \
     libgl1 \
