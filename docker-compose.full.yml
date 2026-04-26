@@ -1,4 +1,4 @@
-version: "3.8"
+# removed obsolete version: Compose ignores it on modern clients
 
 # Full production deployment for vine-api
 # Replaces vine-rec on the server
@@ -16,6 +16,7 @@ services:
     build:
       context: ./ocr-service
       dockerfile: Dockerfile
+    image: vine-suite/ocr-service:local
     ports:
       - "127.0.0.1:8003:8000"
     environment:
