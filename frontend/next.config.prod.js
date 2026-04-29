@@ -8,21 +8,8 @@ const nextConfig = {
   basePath: '/vine',
   // Asset prefix for static files
   assetPrefix: '/vine',
-  async rewrites() {
-    return [
-      // API calls go to /vine/api/ which nginx proxies to backend
-      {
-        source: '/api/:path*',
-        destination: '/api/:path*',
-      },
-      // Health checks
-      {
-        source: '/health/:path*',
-        destination: '/health/:path*',
-      },
-    ];
-  },
-  // Ensure trailing slashes match nginx expectations
+  // Nginx handles API proxying - no rewrites needed
+  // Client calls /vine/api/xxx -> nginx -> backend:9002
   trailingSlash: false,
 };
 
