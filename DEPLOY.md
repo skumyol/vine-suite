@@ -211,9 +211,9 @@ On x86_64 with 4GB RAM allocated:
 Your server nginx config should have:
 
 ```nginx
-# vine-api backend (port 8002)
+# vine-api backend (port 9002)
 location /vine/api/ {
-    proxy_pass http://127.0.0.1:8002/api/;
+    proxy_pass http://127.0.0.1:9002/api/;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -224,7 +224,7 @@ location /vine/api/ {
 
 # vine-api health endpoint (backend root /health)
 location /vine/health/ {
-    proxy_pass http://127.0.0.1:8002/health/;
+    proxy_pass http://127.0.0.1:9002/health/;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -232,9 +232,9 @@ location /vine/health/ {
     proxy_set_header X-Forwarded-Proto $scheme;
 }
 
-# vine-api frontend (port 3001)
+# vine-api frontend (port 9001)
 location /vine {
-    proxy_pass http://127.0.0.1:3001;
+    proxy_pass http://127.0.0.1:9001;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -245,31 +245,31 @@ location /vine {
 }
 ```
 
-### Docker Compose Production (Full)
+### Docker Compose Production
 
-Use `docker-compose.full.yml` for complete deployment with all OCR engines:
+Use `docker-compose.yml` for deployment with all OCR engines:
 
 ```bash
 # On the server
-cd /path/to/vine-api
-docker-compose -f docker-compose.full.yml up -d --build
+cd /path/to/vine-suite
+docker-compose up -d --build
 ```
 
 **Services:**
 | Service | Port | Internal | Description |
 |---------|------|----------|-------------|
-| frontend | 3001 | :3000 | Next.js app (replaces vine-rec frontend) |
-| api | 8002 | :8000 | Main vine-api backend |
-| ocr-service | 8003 | :8000 | OCR microservice (EasyOCR, Tesseract, Paddle) |
-| openserp | 7000 | :7000 | Image search microservice |
+| frontend | 9001 | :3000 | Next.js app |
+| api | 9002 | :8000 | Main vine-api backend |
+| ocr-service | 9003 | :8000 | OCR microservice |
+| openserp | 9004 | :7000 | Image search microservice |
 
 ### Path Mapping
 
 | Nginx Location | Proxies To | Backend Route |
 |----------------|------------|---------------|
-| `/vine/api/` | `localhost:8002/api/` | `/api/v1/*` |
-| `/vine/health/` | `localhost:8002/health/` | `/health/*` |
-| `/vine` | `localhost:3001/` | Next.js app |
+| `/vine/api/` | `localhost:9002/api/` | `/api/v1/*` |
+| `/vine/health/` | `localhost:9002/health/` | `/health/*` |
+| `/vine` | `localhost:9001/` | Next.js app |
 
 ### Environment Variables
 
@@ -287,16 +287,16 @@ NVIDIA_API_KEY=your_key_here
 
 ```bash
 # Test OCR service (wait ~5 min for warmup)
-curl http://localhost:8003/health
-curl http://localhost:8003/eval/quick
+curl http://localhost:9003/health
+curl http://localhost:9003/eval/quick
 
 # Test backend
-curl http://localhost:8002/health
-curl http://localhost:8002/api/v1/modes
-curl http://localhost:8002/api/v1/eval/ocr
+curl http://localhost:9002/health
+curl http://localhost:9002/api/v1/modes
+curl http://localhost:9002/api/v1/eval/ocr
 
 # Test frontend
-curl -I http://localhost:3001
+curl -I http://localhost:9001
 
 # Test via nginx (after nginx config reload)
 curl https://skumyol.com/vine/health/
@@ -313,8 +313,8 @@ curl https://skumyol.com/vine/api/v1/modes
 
 2. Start vine-api:
    ```bash
-   cd /path/to/vine-api
-   docker-compose -f docker-compose.full.yml up -d --build
+   cd /path/to/vine-suite
+   docker-compose up -d --build
    ```
 
 3. Update nginx (if needed) and reload:

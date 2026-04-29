@@ -23,19 +23,19 @@ Deploys as Docker containers behind nginx.
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────────┐
-│   Nginx     │────▶│  Frontend   │────▶│   Next.js 14    │
-│  (443/80)   │     │   :3001     │     │   /vine         │
+│   Nginx     │────▶│  frontend   │────▶│   Next.js 14    │
+│  (443/80)   │     │   :9001     │     │   /vine         │
 └──────┬──────┘     └─────────────┘     └─────────────────┘
        │
        │ /vine/api/    ┌─────────────┐
        └──────────────▶│    API      │────▶│  OpenSerp    │
-                       │   :8002     │     │   :7000      │
+                       │   :9002     │     │   :9004      │
                        │   FastAPI   │     │  (search)    │
                        └──────┬──────┘     └─────────────────┘
                               │
                               │ OCR request   ┌─────────────┐
                               └──────────────▶│ OCR Service  │
-                                              │   :8003      │
+                                              │   :9003      │
                                               │EasyOCR/Tess/ │
                                               │   Paddle     │
                                               └─────────────┘
@@ -68,8 +68,7 @@ Deploys as Docker containers behind nginx.
 │   ├── Dockerfile              # Multi-engine OCR container
 │   └── main.py                 # FastAPI OCR endpoints
 │
-├── docker-compose.yml          # Local development
-├── docker-compose.full.yml     # Production deployment
+├── docker-compose.yml          # Full stack deployment
 └── DEPLOY.md                   # Deployment guide
 ```
 
@@ -97,7 +96,7 @@ python -m pytest tests/ -v
 docker-compose up -d
 
 # Production deployment
-docker-compose -f docker-compose.full.yml up -d --build
+docker-compose up -d --build
 ```
 
 ---
@@ -216,12 +215,12 @@ Quick deploy:
 ```bash
 # Server setup
 echo "OPENROUTER_API_KEY=your_key" > .env
-docker-compose -f docker-compose.full.yml up -d --build
+docker-compose up -d --build
 
 # Nginx locations
-location /vine/api/ { proxy_pass http://127.0.0.1:8002/api/; }
-location /vine/health/ { proxy_pass http://127.0.0.1:8002/health/; }
-location /vine { proxy_pass http://127.0.0.1:3001; }
+location /vine/api/ { proxy_pass http://127.0.0.1:9002/api/; }
+location /vine/health/ { proxy_pass http://127.0.0.1:9002/health/; }
+location /vine { proxy_pass http://127.0.0.1:9001; }
 ```
 
 ---

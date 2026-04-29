@@ -43,13 +43,13 @@ COPY config.py .
 COPY main.py .
 COPY evaluation.py .
 
-EXPOSE 8000
+EXPOSE 8082
 
 # Memory-optimized: Single worker, limit concurrent connections
 # Each request gets exclusive access to engines (no lock contention)
 CMD ["uvicorn", "main:app", \
      "--host", "0.0.0.0", \
-     "--port", "8000", \
+     "--port", "8082", \
      "--workers", "1", \
      "--limit-concurrency", "3", \
      "--backlog", "10", \

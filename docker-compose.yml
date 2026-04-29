@@ -1,0 +1,120 @@
+name: vine
+
+# Clean port allocation: 9000-9009 range
+# 9001: Frontend (Next.js)
+# 9002: API (FastAPI)
+# 9003: OCR Service
+# 9004: OpenSerp
+
+services:
+  # Frontend - Next.js 14
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vine-frontend
+    ports:
+      - "127.0.0.1:9001:3000"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - vine-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # API Backend - FastAPI
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vine-api
+    ports:
+      - "127.0.0.1:9002:8081"
+    environment:
+      - OCR_SERVICE_URL=http://ocr-service:8082
+      - OPENSERP_URL=http://openserp:7000
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - NVIDIA_API_KEY=${NVIDIA_API_KEY}
+      - OCR_PROVIDER=easyocr
+      - VLM_PROVIDER=gemini
+      - SEARCH_PROVIDER=openserp
+      - DEBUG=false
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+    networks:
+      - vine-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    depends_on:
+      ocr-service:
+        condition: service_healthy
+      openserp:
+        condition: service_healthy
+
+  # OCR Microservice - EasyOCR + Tesseract + Paddle
+  ocr-service:
+    build:
+      context: ./ocr-service
+      dockerfile: Dockerfile
+    container_name: vine-ocr
+    ports:
+      - "127.0.0.1:9003:8082"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ENABLED_ENGINES=easyocr,tesseract,paddle
+      - MAX_CONCURRENT_REQUESTS=3
+      - GC_AFTER_REQUEST=true
+    volumes:
+      - ~/.cache/pip:/root/.cache/pip:rw
+      - ocr-models:/root/.EasyOCR
+      - ocr-models:/root/.paddleocr
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
+    restart: unless-stopped
+    networks:
+      - vine-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+
+  # OpenSerp - Image search
+  openserp:
+    image: karust/openserp:latest
+    container_name: vine-search
+    ports:
+      - "127.0.0.1:9004:7000"
+    command: serve -a 0.0.0.0 -p 7000
+    restart: unless-stopped
+    networks:
+      - vine-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:7000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  vine-net:
+    name: vine-network
+
+volumes:
+  ocr-models:
+    driver: local
