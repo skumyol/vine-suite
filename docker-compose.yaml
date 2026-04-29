@@ -1,25 +1,28 @@
-version: "3.8"
+# Full production deployment for vine-api
+# Replaces vine-rec on the server
+# Includes all services: OCR (EasyOCR, Tesseract, Paddle), OpenSerp, API, Frontend
+#
+# Nginx mapping:
+#   - /vine/api/ -> api:8002/api/
+#   - /vine/health/ -> api:8002/health/
+#   - /vine -> frontend:3001
+#   - /ocr/ -> ocr-service:8003 (optional direct access)
 
 services:
-  # OCR Microservice - All OCR engines in one container
-  # Note: On ARM64 (Apple Silicon), PaddleOCR may crash due to platform incompatibility.
-  # For ARM64 deployment, use: ENABLED_ENGINES=easyocr,tesseract
-  # For x86_64 deployment, use: ENABLED_ENGINES=easyocr,tesseract,paddle
+  # OCR Microservice - All OCR engines (EasyOCR, Tesseract, Paddle)
   ocr-service:
     build:
       context: ./ocr-service
       dockerfile: Dockerfile
     ports:
-      - "8001:8000"
+      - "127.0.0.1:8003:8000"
     environment:
       - PYTHONUNBUFFERED=1
       - ENABLED_ENGINES=easyocr,tesseract,paddle
       - MAX_CONCURRENT_REQUESTS=3
       - GC_AFTER_REQUEST=true
     volumes:
-      # Pip cache for faster rebuilds
       - ~/.cache/pip:/root/.cache/pip:rw
-    # Memory limits: 4GB for all 3 engines pre-warmed
     deploy:
       resources:
         limits:
@@ -31,8 +34,10 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 300s  # 5 min for model warmup
+      start_period: 300s
     restart: unless-stopped
+    networks:
+      - vine-api-net
 
   # OpenSerp microservice for image search
   openserp:
@@ -47,19 +52,25 @@ services:
       retries: 3
       start_period: 30s
     restart: unless-stopped
+    networks:
+      - vine-api-net
 
-  # Main vine-api application
+  # Main vine-api backend
   api:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8002:8000"
     environment:
       - OCR_SERVICE_URL=http://ocr-service:8000
       - OPENSERP_URL=http://openserp:7000
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - NVIDIA_API_KEY=${NVIDIA_API_KEY}
+      - OCR_PROVIDER=easyocr
+      - VLM_PROVIDER=gemini
+      - SEARCH_PROVIDER=openserp
+      - DEBUG=false
     depends_on:
       ocr-service:
         condition: service_healthy
@@ -68,7 +79,37 @@ services:
     restart: unless-stopped
     volumes:
       - ./data:/app/data
+    networks:
+      - vine-api-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Next.js frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - vine-api-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 networks:
-  default:
+  vine-api-net:
     name: vine-api-network
