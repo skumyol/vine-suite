@@ -107,7 +107,8 @@ class PipelineEvalResponse(BaseModel):
 @router.get("/pipelines", response_model=PipelineEvalResponse)
 async def evaluate_pipelines(
     registry: ProviderRegistry = Depends(get_registry),
-    modes: Optional[List[str]] = Query(None, description="Pipeline modes to test (default: all)")
+    modes: Optional[List[str]] = Query(None, description="Pipeline modes to test (default: all)"),
+    max_cases: int = Query(5, description="Max test cases to run (1-5)"),
 ):
     """
     Evaluate all available pipelines against test fixtures.
@@ -139,6 +140,7 @@ async def evaluate_pipelines(
     vlm_provider = registry.get_vlm()
 
     all_results: List[PipelineEvalResult] = []
+    test_cases = TEST_CASES[:max_cases]
 
     for mode in available_modes:
         pipeline_name = mode
@@ -159,7 +161,7 @@ async def evaluate_pipelines(
                 )
         except Exception as e:
             # Pipeline init failed
-            for test in TEST_CASES:
+            for test in test_cases:
                 all_results.append(PipelineEvalResult(
                     test_name=test["name"],
                     pipeline=pipeline_name,
@@ -173,7 +175,7 @@ async def evaluate_pipelines(
             continue
 
         # Run each test case
-        for test in TEST_CASES:
+        for test in test_cases:
             start = time.time()
             try:
                 result = await pipeline.analyze(test["request"])
@@ -246,8 +248,8 @@ async def evaluate_pipelines(
 async def evaluate_pipelines_quick(
     registry: ProviderRegistry = Depends(get_registry)
 ):
-    """Quick pipeline evaluation - summary only."""
-    response = await evaluate_pipelines(registry)
+    """Quick pipeline evaluation - 1 pipeline, 2 wines, summary only."""
+    response = await evaluate_pipelines(registry, modes=["hybrid_fast"], max_cases=2)
     return {
         "status": response.status,
         "pipelines_tested": response.pipelines_tested,

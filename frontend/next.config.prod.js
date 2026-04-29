@@ -2,6 +2,7 @@
 const nextConfig = {
   experimental: {
     appDir: true,
+    proxyTimeout: 300_000,  // 5 min for long-running eval requests
   },
   output: 'standalone',
   // Base path for production deployment at /vine

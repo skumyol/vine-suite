@@ -1,6 +1,7 @@
 """OpenSerp microservice client for image search."""
 
 import os
+import traceback
 from typing import Optional
 
 import httpx
@@ -45,69 +46,137 @@ class OpenSerpProvider(SearchProvider):
         """
         Search for images using OpenSerp microservice.
 
+        Uses OpenSerp's /mega/image endpoint to search Google and Bing
+        in parallel, then deduplicates and ranks results.
+        Falls back to individual engine calls if mega fails.
+
         Args:
             query: Search query string
             max_results: Maximum results to return
         """
         max_results = max_results or self.max_results
+        search_query = f"{query} wine bottle"
 
-        # Try Google first, then Bing as fallback
+        # Try mega/image first (parallel Google + Bing)
+        candidates = await self._try_mega_search(search_query, max_results)
+
+        # If mega failed, fall back to individual engines
+        if not candidates:
+            print(f"[OpenSerp] mega/image failed, trying individual engines")
+            candidates = await self._try_individual_search(search_query, max_results)
+
+        # Deduplicate by URL
+        seen = set()
+        unique = []
+        for c in candidates:
+            if c.url not in seen:
+                seen.add(c.url)
+                unique.append(c)
+
+        return SearchResult(
+            items=unique[:max_results],
+            query=query,
+            total_results=len(unique),
+            source="openserp",
+        )
+
+    async def _try_mega_search(self, search_query: str, max_results: int):
+        """Try the mega/image endpoint (parallel Google + Bing)."""
         candidates = []
+        try:
+            async with httpx.AsyncClient(timeout=90.0) as client:
+                resp = await client.get(
+                    f"{self.base_url}/mega/image",
+                    params={
+                        "text": search_query,
+                        "engines": "bing",  # Google blocks headless browsers consistently
+                        "limit": max(10, max_results * 2),
+                        "lang": "EN",
+                    },
+                    timeout=90.0,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                candidates = self._parse_image_results(data)
+        except httpx.HTTPStatusError as e:
+            detail = ""
+            try:
+                err_data = e.response.json()
+                detail = f" ({err_data.get('error', '')}: {err_data.get('message', '')})"
+            except Exception:
+                detail = ""
+            print(f"[OpenSerp] mega/image HTTP {e.response.status_code}{detail}")
+        except httpx.TimeoutException as e:
+            print(f"[OpenSerp] mega/image timeout: {type(e).__name__}")
+        except Exception as e:
+            print(f"[OpenSerp] mega/image {type(e).__name__}: {e}")
+        return candidates
 
-        for engine in ["google", "bing"]:
+    async def _try_individual_search(self, search_query: str, max_results: int):
+        """Fall back to individual engine calls."""
+        candidates = []
+        for engine in ["bing"]:  # Google blocks headless browsers consistently
             if len(candidates) >= max_results:
                 break
-
             try:
-                async with httpx.AsyncClient(timeout=30.0) as client:
-                    # OpenSerp uses /:engine/:query pattern
-                    # For image search, we add "images" to query or use tbm=isch equivalent
-                    search_query = f"{query} wine bottle"
-
+                async with httpx.AsyncClient(timeout=90.0) as client:
                     resp = await client.get(
-                        f"{self.base_url}/{engine}/{search_query}",
+                        f"{self.base_url}/{engine}/image",
                         params={
-                            "page": 0,
-                            "lr": "en",
+                            "text": search_query,
+                            "limit": max(10, max_results * 2),
+                            "lang": "EN",
                         },
-                        timeout=30.0,
+                        timeout=90.0,
                     )
                     resp.raise_for_status()
                     data = resp.json()
-
-                    # Parse results based on OpenSerp response format
-                    # Results typically have title, link, description
-                    results = data.get("results", [])
-
-                    for item in results[:15]:
-                        url = item.get("link") or item.get("url", "")
-                        if not url:
-                            continue
-
-                        # Skip bad domains
-                        domain = self._extract_domain(url)
-                        if any(bad in domain.lower() for bad in BAD_DOMAINS):
-                            continue
-
-                        # Score based on domain trust
-                        score = 5.0
-                        if any(trusted in domain.lower() for trusted in TRUSTED_DOMAINS):
-                            score = 9.0
-
-                        candidates.append(SearchItem(
-                            url=url,
-                            title=item.get("title", ""),
-                            source=f"OpenSerp/{engine.capitalize()}",
-                            page_url=url,
-                            domain=domain,
-                            score=score,
-                        ))
-
+                    candidates.extend(self._parse_image_results(data))
             except httpx.HTTPStatusError as e:
-                # Log but continue to next engine
-                print(f"[OpenSerp] {engine} error: HTTP {e.response.status_code}")
+                print(f"[OpenSerp] {engine}/image HTTP {e.response.status_code}")
             except Exception as e:
-                print(f"[OpenSerp] {engine} error: {e}")
+                print(f"[OpenSerp] {engine}/image {type(e).__name__}: {e}")
+        return candidates
+
+    def _parse_image_results(self, data: dict):
+        """Parse OpenSerp image search response into SearchItem list."""
+        candidates = []
+        results = data.get("results", [])
+
+        for item in results:
+            image_data = item.get("image", {})
+            image_url = image_data.get("url", "")
+            if not image_url:
+                continue
+
+            source = item.get("source", {})
+            page_url = source.get("page_url", "") or image_url
+            domain = source.get("domain", "") or self._extract_domain(image_url)
+
+            # Skip bad domains
+            if any(bad in domain.lower() for bad in BAD_DOMAINS):
+                continue
+
+            # Score based on domain trust
+            score = 5.0
+            if any(trusted in domain.lower() for trusted in TRUSTED_DOMAINS):
+                score = 9.0
+
+            # Boost by rank (lower rank = higher score boost)
+            rank = item.get("rank", 99)
+            score += max(0, (10 - rank) * 0.5)
+
+            candidates.append(SearchItem(
+                url=image_url,
+                title=item.get("title", ""),
+                source=f"OpenSerp/{item.get('engine', 'unknown').capitalize()}",
+                page_url=page_url,
+                domain=domain,
+                score=score,
+                thumbnail_url=image_data.get("thumbnail", ""),
+            ))
+
+        return candidates
 
         # Deduplicate by URL
         seen = set()

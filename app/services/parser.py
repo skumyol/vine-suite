@@ -191,7 +191,7 @@ class WineParser:
 class QueryBuilder:
     """Build search queries from parsed wine identity."""
 
-    def build_queries(self, parsed: ParsedIdentity) -> List[str]:
+    def build_queries(self, parsed: ParsedIdentity, max_queries: int = 3) -> List[str]:
         """Build a list of search queries in priority order."""
         queries = []
         wine_name = parsed.raw_wine_name.strip()
@@ -243,4 +243,4 @@ class QueryBuilder:
                 deduped.append(cleaned)
                 seen.add(cleaned)
 
-        return deduped[:8]
+        return deduped[:max_queries]
