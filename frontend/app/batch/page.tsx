@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Layers, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Layers, Loader2, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -16,6 +16,7 @@ export default function BatchPage() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<AnalyzeResult[] | null>(null);
   const [summary, setSummary] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const addSku = () => setSkus([...skus, '']);
   const removeSku = (index: number) => setSkus(skus.filter((_, i) => i !== index));
@@ -32,15 +33,19 @@ export default function BatchPage() {
 
     setLoading(true);
     setResults(null);
+    setSummary(null);
+    setError(null);
 
     try {
-      const response = await analyzeBatch({ 
-        skus: validSkus, 
-        analyzer_mode: mode as any 
+      const response = await analyzeBatch({
+        skus: validSkus,
+        analyzer_mode: mode as any
       });
       setResults(response.results);
       setSummary(response.summary);
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Batch analysis failed';
+      setError(msg);
       console.error(err);
     } finally {
       setLoading(false);
@@ -117,8 +122,8 @@ export default function BatchPage() {
                   </select>
                 </div>
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={loading || skus.filter(s => s.trim()).length === 0}
                   className="w-full"
                 >
@@ -129,6 +134,13 @@ export default function BatchPage() {
                   )}
                   Run Batch Analysis
                 </Button>
+
+                {error && (
+                  <div className="mt-4 p-3 rounded-md bg-danger-soft text-danger text-sm flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    {error}
+                  </div>
+                )}
               </form>
             </CardContent>
           </Card>
