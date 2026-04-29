@@ -10,11 +10,10 @@ import {
   ProvidersHealthResponse,
 } from './types';
 
-// Base path for API calls (/vine in production, empty in dev)
+// Base path for API calls (empty in dev, /vine in production with nginx)
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 // API base path - matches backend /api/v1/ routes
-// With basePath: '/vine', this becomes /vine/api/v1 which nginx proxies to backend
 const API_BASE = `${BASE_PATH}/api/v1`;
 
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
@@ -72,10 +71,10 @@ export async function evaluatePipelines(modes?: string[]): Promise<PipelineEvalR
 
 /** Get provider health status */
 export async function getProviderHealth(): Promise<ProvidersHealthResponse> {
-  return fetch(`${BASE_PATH}/health/providers`).then(r => r.json());
+  return fetchApi<ProvidersHealthResponse>('/health/providers');
 }
 
 /** Basic health check */
 export async function healthCheck(): Promise<{ status: string }> {
-  return fetch(`${BASE_PATH}/health`).then(r => r.json());
+  return fetchApi<{ status: string }>('/health');
 }

@@ -30,7 +30,8 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(health.router)
+app.include_router(health.router)                          # /health, /health/ready, /health/providers
+app.include_router(health.router, prefix="/api/v1")       # /api/v1/health, /api/v1/health/ready, /api/v1/health/providers
 app.include_router(analyze.router, prefix="/api/v1")
 app.include_router(eval.router, prefix="/api/v1")
 
