@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { BarChart3, Loader2, Play, Zap } from 'lucide-react';
+import { BarChart3, Loader2, Play, Zap, AlertCircle } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -12,13 +12,17 @@ import { PipelineEvalResponse } from '@/lib/types';
 export default function EvalPage() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<PipelineEvalResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const runQuickEval = async () => {
     setLoading(true);
+    setError(null);
     try {
       const response = await evaluatePipelinesQuick();
       setResults(response);
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Evaluation failed';
+      setError(msg);
       console.error(err);
     } finally {
       setLoading(false);
@@ -27,10 +31,13 @@ export default function EvalPage() {
 
   const runFullEval = async () => {
     setLoading(true);
+    setError(null);
     try {
       const response = await evaluatePipelines();
       setResults(response);
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Evaluation failed';
+      setError(msg);
       console.error(err);
     } finally {
       setLoading(false);
@@ -64,6 +71,17 @@ export default function EvalPage() {
           </>
         }
       />
+
+      {error && (
+        <Card className="border-danger">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 text-danger">
+              <AlertCircle className="h-4 w-4" />
+              <p className="text-sm">{error}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {results?.summary && (
         <Card>
